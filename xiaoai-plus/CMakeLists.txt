@@ -10,6 +10,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(SHERPA_ONNX_STATIC_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/assets/sherpa_onnx_static" CACHE PATH "Path to sherpa_onnx static package root")
 
 include(FetchContent)
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+endif()
 
 # Force ZLIB and OpenSSL to resolve to static .a BEFORE FetchContent
 # so that ixwebsocket picks up the static versions.
@@ -30,23 +33,23 @@ endif()
 
 FetchContent_Declare(
   nlohmann_json
-  GIT_REPOSITORY https://github.com/nlohmann/json.git
-  GIT_TAG v3.11.3
+  URL https://codeload.github.com/nlohmann/json/tar.gz/refs/tags/v3.11.3
+  URL_HASH SHA256=0d8ef5af7f9794e3263480193c491549b2ba6cc74bb018906202ada498a79406
 )
 FetchContent_MakeAvailable(nlohmann_json)
 
 FetchContent_Declare(
   ixwebsocket
-  GIT_REPOSITORY https://github.com/machinezone/IXWebSocket.git
-  GIT_TAG v11.4.5
+  URL https://codeload.github.com/machinezone/IXWebSocket/tar.gz/refs/tags/v11.4.5
+  URL_HASH SHA256=c5fc225edec32bf7d583e55347ef2c9c4940d005c13ef5e848354a85602f5fd6
 )
 set(USE_TLS ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(ixwebsocket)
 
 FetchContent_Declare(
   spdlog
-  GIT_REPOSITORY https://github.com/gabime/spdlog.git
-  GIT_TAG v1.15.1
+  URL https://codeload.github.com/gabime/spdlog/tar.gz/refs/tags/v1.15.1
+  URL_HASH SHA256=25c843860f039a1600f232c6eb9e01e6627f7d030a2ae5e232bdd3c9205d26cc
 )
 FetchContent_MakeAvailable(spdlog)
 

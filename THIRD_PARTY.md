@@ -3,6 +3,7 @@
 
 | 组件 | 许可与来源 |
 | --- | --- |
+| rolazd/xiaoai-doubao | [MIT](https://github.com/rolazd/xiaoai-doubao/blob/main/LICENSE)，xiaoai-voice的上游项目，版权声明见根目录 `LICENSE` |
 | kslr/xiaoai-plus | [MIT](https://github.com/kslr/xiaoai-plus/blob/main/LICENSE)，`xiaoai-plus/LICENSE` 原样保留 |
 | idootop/open-xiaoai | [MIT](https://github.com/idootop/open-xiaoai/blob/main/LICENSE)，研究参考 |
 | sherpa-onnx | [Apache-2.0](https://github.com/k2-fsa/sherpa-onnx/blob/master/LICENSE)，v1.12.25，构建时下载 |
@@ -22,7 +23,7 @@
 | Pydantic / Starlette | [MIT](https://github.com/pydantic/pydantic/blob/main/LICENSE) / [BSD-3-Clause](https://github.com/encode/starlette/blob/main/LICENSE.md)，FastAPI 依赖 |
 | HTTPX / pytest | [BSD-3-Clause](https://github.com/encode/httpx/blob/master/LICENSE.md) / [MIT](https://github.com/pytest-dev/pytest/blob/main/LICENSE)，仅测试 |
 
-安装时在Mac下载，不随包再分发：
+按对应机型的安装流程下载，不随项目包再分发：
 - [官方KWS模型归档（2025-12-20）](https://github.com/k2-fsa/sherpa-onnx/releases/download/kws-models/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20.tar.bz2)，chunk-8；encoder与joiner取int8、decoder取浮点版本，与作者装机文件一致；tokens.txt、en.phone从同一归档提取。
 - [固定日期的Mozilla CA bundle](https://curl.se/ca/cacert-2026-11-05.pem)。下载SHA-256固定在setup/speaker.py。
 - [小米OH2P 1.62.2 OTA](https://cdn.cnbj1.fds.api.mi-img.com/xiaoqiang/rom/oh2p/mico_all_616cd9d93_1.62.2.bin)，仅在.local处理，不分发固件。

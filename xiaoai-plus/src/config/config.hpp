@@ -47,6 +47,8 @@ struct AudioPreset {
   int period_size{360};
   float playback_gain{0.90f};
   bool dump_output_audio_raw{false};
+  std::string speaker_profile{"oh2p"};
+  std::string native_wake_log{"/tmp/log/messages"};
 };
 using Audio = AudioPreset;
 

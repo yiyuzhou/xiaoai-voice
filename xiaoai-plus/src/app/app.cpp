@@ -237,21 +237,19 @@ App::App(config::Config cfg, bool kws_only, bool trial_once, bool kws_diagnostic
       !(cfg_.wakeup.kws_threshold > 0.0f && cfg_.wakeup.kws_threshold <= 1.0f)) {
     throw std::invalid_argument("invalid KWS PCM configuration");
   }
-  // Keep runtime behavior aligned with open-xiaoai defaults.
-  cfg_.audio.input_device = "noop";
-  cfg_.audio.output_device = "Playback";
-  cfg_.audio.sample_rate = 16000;
-  cfg_.audio.channels = 4;
-  cfg_.audio.bits_per_sample = 32;  // Record S32_LE; PDM data is in lower 24 bits
-  cfg_.audio.buffer_size = 1440;
-  cfg_.audio.period_size = 360;
+  // LX06 uses the mono S16 noop PCM provided by its Open-XiaoAI ALSA patch.
+  if (cfg_.audio.speaker_profile != "lx06") {
+    cfg_.audio.output_device = "Playback";
+    cfg_.audio.channels = 4;
+    cfg_.audio.bits_per_sample = 32;
+  }
 
   recorder_ = std::make_unique<audio::ArecordRecorder>(cfg_.audio);
   if (kws_diagnostics_) {
     kws_stats_ = std::make_unique<audio::KwsDiagnostics>(cfg_.audio.channels);
   }
 
-  // Cloud TTS is 24 kHz mono S16LE; capture/KWS remain 16 kHz, 4-ch S32LE.
+  // Cloud TTS is 24 kHz mono S16LE. Capture stays at 16 kHz.
   config::Audio player_audio = config::MakeTtsPlaybackAudio(cfg_.audio);
   if (!kws_only_) {
     player_ = std::make_unique<audio::AplayPlayer>(player_audio, cfg_.budget.output_queue_frames);
@@ -285,7 +283,9 @@ App::App(config::Config cfg, bool kws_only, bool trial_once, bool kws_diagnostic
         return gate_->TryWakeup(keyword);
       });
   if (!kws_only_) {
-    native_wake_monitor_ = std::make_unique<NativeWakeMonitor>([this] { OnNativeWake(); });
+    native_wake_monitor_ = std::make_unique<NativeWakeMonitor>(
+        [this] { OnNativeWake(); }, cfg_.audio.native_wake_log,
+        cfg_.audio.speaker_profile == "lx06");
   }
 
   auto kws_engine = std::make_shared<wakeup::ZipformerKwsEngine>(cfg_.wakeup);
@@ -294,9 +294,9 @@ App::App(config::Config cfg, bool kws_only, bool trial_once, bool kws_diagnostic
   kws_cfg.trigger = trigger_.get();
   kws_cfg.kws_engine = std::move(kws_engine);
   kws_cfg.sample_rate = cfg_.audio.sample_rate;
-  kws_cfg.channels = 1;  // KWS receives mono (downmixed from 4ch in OnInputAudio)
+  kws_cfg.channels = 1;
   kws_cfg.bounded_decisions = cfg_.conversation.ordinary_barge_in;
-  kws_cfg.bit_depth = 16;  // KWS receives S16 after ConvertS32ToS16
+  kws_cfg.bit_depth = 16;
   kws_cfg.min_trigger_interval_ms = kMinTriggerIntervalMs;
   kws_cfg.exit_playback_threshold = cfg_.wakeup.exit_playback_threshold;
   kws_cfg.allow_playback_interrupt = cfg_.conversation.duplex_mode == "half";
@@ -1178,12 +1178,17 @@ void App::ExtractChannelS16(const std::vector<uint8_t>& chunk, int channels, int
 }
 
 void App::OnInputAudio(const std::vector<uint8_t>& chunk) {
-  if (kws_stats_ && chunk.size() % (sizeof(int32_t) * cfg_.audio.channels) == 0) {
+  if (kws_stats_ && cfg_.audio.bits_per_sample == 32 &&
+      chunk.size() % (sizeof(int32_t) * cfg_.audio.channels) == 0) {
     kws_stats_->ObserveCaptureS32(reinterpret_cast<const int32_t*>(chunk.data()),
         chunk.size() / (sizeof(int32_t) * cfg_.audio.channels));
   }
   const auto conversion_start = std::chrono::steady_clock::now();
-  ConvertS32ToS16(chunk, &s16_buf_, kws_s32_shift_);
+  if (cfg_.audio.bits_per_sample == 32) {
+    ConvertS32ToS16(chunk, &s16_buf_, kws_s32_shift_);
+  } else {
+    s16_buf_ = chunk;
+  }
   if (kws_stats_) {
     kws_stats_->RecordDuration(audio::KwsDiagnostics::Stage::kS32ToS16,
         std::chrono::duration_cast<std::chrono::nanoseconds>(

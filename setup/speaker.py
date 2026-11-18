@@ -103,15 +103,22 @@ def content(a,package):
             if not m.isfile():continue
             p=stage.joinpath(*rel.parts[1:]);p.parent.mkdir(parents=True,exist_ok=True,mode=0o700)
             p.write_bytes(t.extractfile(m).read());p.chmod(0o600)
+    prepare_assets(stage)
+    shutil.copyfile(config(a),stage/'config.ini');(stage/'config.ini').chmod(0o600)
+    return stage
+
+def prepare_assets(stage):
+    LOCAL.mkdir(exist_ok=True, mode=0o700)
     model=LOCAL/'kws.tar.bz2';download(MODEL_URL,model,MODEL_SHA)
     assets=stage/'assets';assets.mkdir(exist_ok=True,mode=0o700)
     with tarfile.open(model) as t:
         for out,name in [('encoder.onnx','encoder-epoch-13-avg-2-chunk-8-left-64.int8.onnx'),('decoder.onnx','decoder-epoch-13-avg-2-chunk-8-left-64.onnx'),('joiner.onnx','joiner-epoch-13-avg-2-chunk-8-left-64.int8.onnx'),('tokens.txt','tokens.txt'),('en.phone','en.phone')]:
             m=t.getmember('sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/'+name)
             (assets/out).write_bytes(t.extractfile(m).read());(assets/out).chmod(0o600)
-    download(CA_URL,assets/'ca-certificates.crt',CA_SHA)
-    shutil.copyfile(config(a),stage/'config.ini');(stage/'config.ini').chmod(0o600)
-    return stage
+    ca=LOCAL/'ca-certificates.crt'
+    download(CA_URL,ca,CA_SHA)
+    shutil.copyfile(ca,assets/'ca-certificates.crt')
+    (assets/'ca-certificates.crt').chmod(0o600)
 
 def log_scope(offset):
     log=APP+'/xiaoai_plus.log'

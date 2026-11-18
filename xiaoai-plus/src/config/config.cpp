@@ -263,6 +263,14 @@ void Config::validate(bool memory_only) const {
     throw std::runtime_error("realtime.protocol must be v3 or o2");
   if (!(audio.playback_gain > 0.0f && audio.playback_gain <= 1.0f))
     throw std::runtime_error("audio.playback_gain must be in (0,1]");
+  if (audio.speaker_profile != "oh2p" && audio.speaker_profile != "lx06")
+    throw std::runtime_error("audio.speaker_profile must be oh2p or lx06");
+  if (audio.native_wake_log.empty() || audio.native_wake_log.front() != '/')
+    throw std::runtime_error("audio.native_wake_log must be an absolute path");
+  if (audio.speaker_profile == "lx06" &&
+      (conversation.duplex_mode != "half" || conversation.ordinary_barge_in ||
+       wakeup.input_channel > 0))
+    throw std::runtime_error("LX06 requires half duplex and mono capture");
   if(realtime.o2_end_smooth_window_ms<500 || realtime.o2_end_smooth_window_ms>50000 || realtime.o2_voice.empty())
     throw std::runtime_error("invalid realtime.o2 window or voice");
   if(realtime.protocol=="o2" && conversation.ordinary_barge_in)
@@ -439,6 +447,8 @@ Config load(const std::string& path, bool memory_only) {
 
     if (auto it = sections.find("audio"); it != sections.end()) {
       const auto& kv = it->second;
+      SetIfPresent(kv, "speaker_profile", &cfg.audio.speaker_profile);
+      SetIfPresent(kv, "native_wake_log", &cfg.audio.native_wake_log);
       SetIfPresent(kv, "playback_gain", &cfg.audio.playback_gain);
       if (auto dump = kv.find("dump_output_audio_raw"); dump != kv.end()) {
         if (dump->second != "0" && dump->second != "1")

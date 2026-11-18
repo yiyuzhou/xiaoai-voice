@@ -9,12 +9,16 @@ SHERPA_SRC_DIR="${PROJECT_ROOT}/assets/sherpa-onnx-src"
 SHERPA_STATIC_DIR="${PROJECT_ROOT}/assets/sherpa_onnx_static"
 
 # Ensure Docker image exists.
-make -C "${PROJECT_ROOT}/toolchain" build
+HOST_PROJECT_ROOT="${PROJECT_ROOT}"
+if command -v cygpath >/dev/null 2>&1; then
+  HOST_PROJECT_ROOT="$(cygpath -am "${PROJECT_ROOT}")"
+fi
+docker build --platform linux/amd64 -t "${IMAGE_NAME}" "${HOST_PROJECT_ROOT}/toolchain"
 
 # Clone sherpa-onnx source if not present.
 if [ ! -d "${SHERPA_SRC_DIR}" ]; then
   echo "==> Cloning sherpa-onnx ${SHERPA_VERSION} ..."
-  git clone --depth 1 --branch "${SHERPA_VERSION}" \
+  git -c core.autocrlf=false clone --depth 1 --branch "${SHERPA_VERSION}" \
     https://github.com/k2-fsa/sherpa-onnx.git "${SHERPA_SRC_DIR}"
 fi
 if [[ "$(git -C "${SHERPA_SRC_DIR}" describe --tags --exact-match)" != "${SHERPA_VERSION}" ]]; then
@@ -31,9 +35,9 @@ else
 fi
 
 echo "==> Building sherpa-onnx static libraries for ARM ..."
-docker run --rm --platform linux/amd64 \
+MSYS_NO_PATHCONV=1 docker run --rm --platform linux/amd64 \
   -e BUILD_JOBS="${BUILD_JOBS}" \
-  -v "${PROJECT_ROOT}":/workspace \
+  -v "${HOST_PROJECT_ROOT}":/workspace \
   -w /workspace/assets/sherpa-onnx-src \
   "${IMAGE_NAME}" \
   bash -lc '
