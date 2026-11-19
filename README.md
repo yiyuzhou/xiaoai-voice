@@ -2,7 +2,11 @@
 
 # xiaoai-voice
 
-xiaoai-voice 为小爱音箱增加独立的豆包语音入口。喊 **「豆包豆包」** 开始实时语音对话，喊 **「小爱同学」** 使用原厂助手。当前 Windows 部署流程面向 **小爱音箱 Pro（LX06），固件 1.94.13**。默认角色是英语陪练。
+xiaoai-voice 为小爱音箱增加独立的豆包语音入口。喊 **「豆包豆包」** 开始实时语音对话，喊 **「小爱同学」** 使用原厂助手。当前 Windows 部署流程面向 **小爱音箱 Pro（LX06），固件 1.94.13**。
+
+LX06 的豆包每次唤醒默认用**普通话**。聊天中可以说「接下来用英语」或「切回普通话」，语言偏好在当次会话内生效。 [火山引擎实时语音的语言支持](https://docs.volcengine.com/docs/doubao-voice/end-to-endreal-time-speech-large-model-api-access-document?lang=zh)
+
+也可以说「试试用四川话回答」。O2 官方文档列出的会话语言为中文和英语，具体方言的听懂程度和发音效果需要实机验证。
 
 ## 让 Agent 带你安装
 

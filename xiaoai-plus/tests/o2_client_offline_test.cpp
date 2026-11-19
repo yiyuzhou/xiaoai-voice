@@ -23,6 +23,7 @@ int main() {
   std::string sid;
   std::string expected_instructions;
   std::atomic<bool> standalone_greeting{false};
+  std::atomic<bool> general_assistant{false};
   std::atomic<bool> reject_create{false},reject_active{false};std::string error_message;
   server.setOnClientMessageCallback([&](auto,ix::WebSocket& ws,const ix::WebSocketMessagePtr& msg){
     if(msg->type==ix::WebSocketMessageType::Open){++opens;return;}
@@ -36,13 +37,26 @@ int main() {
     if(f.event_id==EventId::kStartConnection)send(50);
     if(f.event_id==EventId::kStartSession) {
       if(reject_create){send(153,{{"status_code",45000292},{"error",error_message}});return;}
-      assert(f.JsonPayload()["dialog"]["system_role"]==expected_instructions);
+      const auto dialog=f.JsonPayload()["dialog"];
+      if (general_assistant) {
+        const auto role=dialog["system_role"].get<std::string>();
+        assert(role.find("默认用普通话")!=std::string::npos);
+        assert(role.find("继续使用该语言")!=std::string::npos);
+        assert(role.find("Speak only English")==std::string::npos);
+        assert(dialog["speaking_style"]=="语气自然、友好、简洁。");
+      } else {
+        assert(dialog["system_role"]==expected_instructions);
+      }
       assert(f.JsonPayload()["asr"]["extra"]["end_smooth_window_ms"]==2500);send(150);
     }
     if(f.event_id==EventId::kTaskRequest)++audio_frames;
     if(f.event_id==EventId::kEndAsr) {assert(audio_frames==3);assert(++commits==1);send(459);}
     if(f.event_id==EventId::kSayHello) {
-      if(standalone_greeting){assert(f.JsonPayload()["content"]=="Hi! I'm Doubao. Story or riddle?");send(152);return;}
+      if(standalone_greeting){
+        assert(f.JsonPayload()["content"]==(general_assistant ? "你好，我是豆包。你想聊什么？"
+                                                             : "Hi! I'm Doubao. Story or riddle?"));
+        send(152);return;
+      }
       if(reject_active){send(599,{{"status_code",45000292},{"error","PRIVATE_ACTIVE_ERROR"}});return;}
       send(450,{{"question_id","q1"}});
       send(451,{{"results",J::array({{{"text","我是 Amy"},{"is_interim",false}}})}});
@@ -89,6 +103,15 @@ int main() {
   realtime::Client no_memory(standalone,{});assert(no_memory.Start() && no_memory.StartSession(2s));
   standalone_greeting=true;assert(no_memory.SendSayHello(standalone.wakeup.say_hello));
   std::this_thread::sleep_for(100ms);no_memory.Stop();standalone_greeting=false;
+  auto lx06=standalone;
+  lx06.audio.speaker_profile="lx06";
+  lx06.normalize();
+  general_assistant=true;standalone_greeting=true;
+  realtime::Client assistant(lx06,{});
+  assert(assistant.Start() && assistant.StartSession(2s));
+  assert(assistant.SendSayHello());
+  std::this_thread::sleep_for(100ms);assistant.Stop();
+  general_assistant=false;standalone_greeting=false;
   expected_instructions="explicit override";
   realtime::Client overridden(cfg,{});assert(overridden.Start() && overridden.StartSession(2s,expected_instructions));overridden.Stop();
   std::ostringstream log;

@@ -194,6 +194,10 @@ std::map<std::string, std::string> Realtime::request_headers() const {
 }
 
 void Config::normalize() {
+  realtime.general_assistant = audio.speaker_profile == "lx06" && !memory.enabled;
+  if (realtime.general_assistant && wakeup.say_hello == "Hi! I'm Doubao. Story or riddle?") {
+    wakeup.say_hello = "你好，我是豆包。你想聊什么？";
+  }
   if (budget.reconnect_backoff_min_ms <= 0) {
     budget.reconnect_backoff_min_ms = 300;
   }

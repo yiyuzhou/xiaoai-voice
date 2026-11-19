@@ -169,15 +169,22 @@ bool Client::StartSession(std::chrono::milliseconds timeout, const std::string& 
     std::string create;
     {
       std::lock_guard<std::mutex> state_lock(state_mu_);
-      std::string instructions = instructions_override.empty() ? cfg_.realtime.preset.system_role + " " +
-                                       cfg_.realtime.preset.speaking_style : instructions_override;
-      if(instructions_override.empty())
-        instructions += " Volume requests: say only '好的'; handled locally, never say you cannot. "
-                        "Usually 2 short sentences, never more than 3; a fun sound like \"Roar!\" doesn't count. At most one question, only at the end. "
-                        "During children's English practice, be natural and encouraging. "
-                        "Preserve the required identity question and continuation opening.";
-      if(instructions_override.empty() && !cfg_.memory.enabled && cfg_.realtime.protocol=="o2")
+      std::string instructions = instructions_override;
+      if (instructions.empty() && cfg_.realtime.general_assistant) {
+        instructions = cfg_.realtime.preset.system_role + " " + cfg_.realtime.preset.speaking_style +
+            " 每次新会话默认用普通话交流。用户要求换语言时，立即用指定语言回答，"
+            "并在本次会话中继续使用该语言，直到用户再次要求切换。"
+            "用户没有明确指定语言时，可以用与用户相同的语言回应。"
+            "用户要求调音量时，用当前语言简短确认，音量由音箱处理。";
+      } else if (instructions.empty() && !cfg_.memory.enabled && cfg_.realtime.protocol == "o2") {
         instructions = memory::PlaymateInstructions(cfg_.memory.child_names);
+      } else if (instructions.empty()) {
+        instructions = cfg_.realtime.preset.system_role + " " + cfg_.realtime.preset.speaking_style +
+            " Volume requests: say only '好的'; handled locally, never say you cannot. "
+            "Usually 2 short sentences, never more than 3; a fun sound like \"Roar!\" doesn't count. At most one question, only at the end. "
+            "During children's English practice, be natural and encouraging. "
+            "Preserve the required identity question and continuation opening.";
+      }
       create = session_.Create(instructions, cfg_.realtime.preset.voice, cfg_.memory.enabled);
     }
     sent = SendTextLocked(create);

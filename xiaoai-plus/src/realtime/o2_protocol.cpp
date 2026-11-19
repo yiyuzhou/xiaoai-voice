@@ -39,11 +39,13 @@ std::string Session::Encode(const std::string& event,const config::Realtime& cfg
     J extra={{"model","1.2.1.1"},{"input_mod","keep_alive"},{"enable_user_query_exit",true},
              {"enable_music",cfg.preset.enable_music},{"enable_volc_websearch",false}};
     if(s.contains("extension"))extra.update(s["extension"]["dialog"]["extra"]);
+    const std::string speaking_style = cfg.general_assistant ? cfg.preset.speaking_style :
+        "Cheerful, playful big buddy for young kids. English only. Slow, clear, simple words. Usually 2 short sentences, never more than 3; a fun sound like \"Roar!\" doesn't count. At most one question, only at the end.";
     return Json(E::kStartSession,{{"asr",{{"extra",{{"enable_custom_vad",true},
         {"end_smooth_window_ms",cfg.o2_end_smooth_window_ms}}}}},
       {"tts",{{"speaker",cfg.o2_voice},{"audio_config",{{"format","pcm_s16le"},{"sample_rate",24000},{"channel",1}}}}},
       {"dialog",{{"bot_name",cfg.preset.bot_name},{"system_role",s.at("instructions")},
-        {"speaking_style","Cheerful, playful big buddy for young kids. English only. Slow, clear, simple words. Usually 2 short sentences, never more than 3; a fun sound like \"Roar!\" doesn't count. At most one question, only at the end."},
+        {"speaking_style",speaking_style},
         {"extra",extra}}}});
   }
   if(type=="input_audio_buffer.commit")return Json(E::kEndAsr,J::object());

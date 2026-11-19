@@ -25,6 +25,7 @@ struct RealtimePreset {
 
 struct Realtime {
   std::string protocol{"v3"}; // Programmatic callers; device load() defaults to O2.
+  bool general_assistant{false};  // Selected by Config::normalize for standalone LX06.
   int o2_end_smooth_window_ms{2500};
   std::string o2_voice{"zh_female_vv_jupiter_bigtts"};
   std::string ws_url() const;

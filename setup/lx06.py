@@ -68,6 +68,7 @@ def make_config(native_log, key):
     config = configparser.ConfigParser(interpolation=None)
     config.read(SOURCE / "config.ini.example", encoding="utf-8")
     config["realtime"]["api_key"] = key
+    config["wakeup"]["say_hello"] = "你好，我是豆包。你想聊什么？"
     config["audio"].update(speaker_profile="lx06", native_wake_log=native_log)
     config["conversation"]["duplex_mode"] = "half"
     config["memory"]["enabled"] = "off"
